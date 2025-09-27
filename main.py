@@ -34,10 +34,3 @@ async def health_check():
     Endpoint para verificar el estado de la API
     """
     return {"status": "healthy", "message": "API is running correctly"}
-
-@app.get("/holaN")
-async def hello_neil():
-    """
-    Endpoint personalizado
-    """
-    return {"message": "Hola neil"}

@@ -68,15 +68,21 @@ class CityService:
         cities = self.load_cities_from_excel()
         return len(cities)
     
-    def get_cities_by_country(self, country: str) -> List[City]:
+
+    def search_cities(self, query: str) -> List[City]:
         """
-        Obtiene ciudades filtradas por país
+        Busca ciudades cuyo nombre contenga la cadena de consulta
         
         Args:
-            country: Nombre del país para filtrar
+            query: Cadena para buscar en los nombres de las ciudades
             
         Returns:
-            Lista de ciudades del país especificado
+            Lista de ciudades que coinciden con la consulta
         """
         all_cities = self.load_cities_from_excel()
-        return [city for city in all_cities if city.country.lower() == country.lower()]
+        query_lower = query.lower()
+        cities = [
+            city for city in all_cities 
+            if query_lower in city.city.lower() or query_lower in city.city_ascii.lower()
+        ]
+        return cities

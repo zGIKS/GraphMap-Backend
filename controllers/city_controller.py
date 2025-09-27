@@ -34,57 +34,9 @@ async def get_cities_count():
     return {"total_cities": total}
 
 
-@router.get("/by-country/{country}", response_model=List[City])
-async def get_cities_by_country(country: str):
+@router.get("/{query}", response_model=List[City])
+async def get_cities_name(query: str):
     """
-    Endpoint que retorna ciudades filtradas por país
-    
-    Args:
-        country: Nombre del país para filtrar ciudades
+    Endpoint que busca ciudades por nombre
     """
-    cities = city_service.get_cities_by_country(country)
-    if not cities:
-        raise HTTPException(
-            status_code=404, 
-            detail=f"No cities found for country: {country}"
-        )
-    return cities
-
-
-@router.get("/search", response_model=List[City])
-async def search_cities(
-    q: Optional[str] = Query(None, description="Buscar ciudades por nombre"),
-    country: Optional[str] = Query(None, description="Filtrar por país"),
-    limit: Optional[int] = Query(100, description="Límite de resultados", ge=1, le=1000)
-):
-    """
-    Endpoint para buscar ciudades con filtros opcionales
-    
-    Args:
-        q: Término de búsqueda para el nombre de la ciudad
-        country: Filtrar por país específico
-        limit: Número máximo de resultados a retornar
-    """
-    all_cities = city_service.load_cities_from_excel()
-    
-    # Aplicar filtros
-    filtered_cities = all_cities
-    
-    # Filtrar por país si se especifica
-    if country:
-        filtered_cities = [
-            city for city in filtered_cities 
-            if city.country.lower() == country.lower()
-        ]
-    
-    # Filtrar por nombre de ciudad si se especifica
-    if q:
-        filtered_cities = [
-            city for city in filtered_cities 
-            if q.lower() in city.city.lower() or q.lower() in city.city_ascii.lower()
-        ]
-    
-    # Aplicar límite
-    filtered_cities = filtered_cities[:limit]
-    
-    return filtered_cities
+    return city_service.search_cities(query)
