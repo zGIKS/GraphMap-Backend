@@ -3,8 +3,8 @@ Controlador para los endpoints relacionados con ciudades
 """
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional
-from services.city_service import CityService
-from entities.city import City
+from graphmap.domain.services.city_service import CityService
+from graphmap.domain.model.entities.city import City
 
 # Crear un router para los endpoints de ciudades
 router = APIRouter(

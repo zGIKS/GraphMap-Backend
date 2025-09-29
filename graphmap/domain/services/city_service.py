@@ -4,7 +4,7 @@ Servicio para manejar operaciones relacionadas con ciudades
 from typing import List
 import pandas as pd
 from fastapi import HTTPException
-from entities.city import City
+from graphmap.domain.model.entities.city import City
 
 
 class CityService:
