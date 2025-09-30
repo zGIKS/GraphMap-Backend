@@ -2,8 +2,9 @@
 Controlador para los endpoints relacionados con ciudades
 """
 from fastapi import APIRouter, HTTPException, Query
-from typing import List, Optional
+from typing import List, Optional, Dict
 from graphmap.domain.services.city_service import CityService
+from graphmap.domain.services.graph_service import GraphService
 from graphmap.domain.model.entities.city import City
 
 # Crear un router para los endpoints de ciudades
@@ -13,16 +14,28 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
-# Instanciar el servicio
+# Instanciar servicios
 city_service = CityService()
+graph_service = GraphService()
 
 
-@router.get("/", response_model=List[City])
+@router.get("/")
 async def get_all_cities():
     """
-    Endpoint que retorna todos los datos de ciudades del archivo Excel
+    Endpoint que retorna ciudades y aristas del grafo de proximidad
     """
-    return city_service.load_cities_from_excel()
+    # Cargar ciudades
+    cities = city_service.load_cities_from_excel()
+
+    # Construir grafo y obtener aristas
+    edges = graph_service.get_graph_edges()
+    summary = graph_service.get_graph_summary()
+
+    return {
+        "cities": [city.dict() for city in cities],
+        "edges": edges,
+        "graph_info": summary
+    }
 
 
 @router.get("/count")
