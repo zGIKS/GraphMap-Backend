@@ -5,6 +5,7 @@ from typing import List
 import pandas as pd
 from fastapi import HTTPException
 from graphmap.domain.model.entities.city import City
+from config import settings
 
 
 class CityService:
@@ -13,14 +14,15 @@ class CityService:
     # Caché estático para evitar recargar el Excel en cada request
     _cities_cache: List[City] = None
 
-    def __init__(self, excel_file_path: str = "dataset.xlsx"):
+    def __init__(self, excel_file_path: str = None):
         """
         Inicializa el servicio con la ruta del archivo Excel
 
         Args:
-            excel_file_path: Ruta al archivo Excel con los datos de ciudades
+            excel_file_path: Ruta al archivo Excel con los datos de ciudades.
+                           Si es None, usa la configuración del .env
         """
-        self.excel_file_path = excel_file_path
+        self.excel_file_path = excel_file_path or settings.DATASET_PATH
     
     def load_cities_from_excel(self) -> List[City]:
         """
