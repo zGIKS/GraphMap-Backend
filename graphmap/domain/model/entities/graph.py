@@ -1,8 +1,7 @@
 """
-Entidad que representa un grafo con triangulación de Delaunay
+Entidad que representa un grafo no dirigido con lista de adyacencia
 """
-import numpy as np
-from typing import List, Tuple
+from typing import List, Tuple, Dict, Set
 
 
 class CityGraph:
@@ -10,14 +9,21 @@ class CityGraph:
 
     def __init__(self):
         # Lista de adyacencia: {nodo: [(vecino, distancia), ...]}
-        self.adj_list = {}
+        self.adj_list: Dict[int, List[Tuple[int, float]]] = {}
 
     def add_edge(self, u: int, v: int, weight: float):
-        """Agrega arista bidireccional entre dos nodos con peso (distancia)"""
+        """Agrega arista bidireccional entre dos nodos con peso (distancia)
+
+        Args:
+            u: ID del primer nodo
+            v: ID del segundo nodo
+            weight: Peso de la arista (distancia)
+        """
         if u not in self.adj_list:
             self.adj_list[u] = []
         if v not in self.adj_list:
             self.adj_list[v] = []
+
         # Evitar duplicados
         if not any(vec == v for vec, _ in self.adj_list[u]):
             self.adj_list[u].append((v, weight))
@@ -25,9 +31,14 @@ class CityGraph:
             self.adj_list[v].append((u, weight))
 
     def get_edges(self) -> List[Tuple[int, int, float]]:
-        """Retorna lista de aristas (u, v, distancia) sin duplicados"""
+        """Retorna lista de aristas (u, v, distancia) sin duplicados
+
+        Returns:
+            Lista de tuplas (nodo_origen, nodo_destino, distancia)
+        """
         edges = []
-        visited = set()
+        visited: Set[Tuple[int, int]] = set()
+
         for u in self.adj_list:
             for v, dist in self.adj_list[u]:
                 # Evitar aristas duplicadas en grafo no dirigido
@@ -35,34 +46,24 @@ class CityGraph:
                 if edge not in visited:
                     visited.add(edge)
                     edges.append((u, v, dist))
+
         return edges
 
-    def calculate_distance(self, lat1: float, lon1: float,
-                          lat2: float, lon2: float) -> float:
-        """Calcula distancia euclidiana entre dos coordenadas (lat, lon)"""
-        return np.sqrt((lat2 - lat1)**2 + (lon2 - lon1)**2)
+    def get_neighbors(self, node: int) -> List[Tuple[int, float]]:
+        """Retorna los vecinos de un nodo con sus distancias
 
-    def build_from_delaunay(self, cities_data: List[Tuple[int, float, float]]):
-        """Construye grafo conectando cada ciudad con sus k vecinos más cercanos
         Args:
-            cities_data: Lista de tuplas (id_ciudad, latitud, longitud)
-        """
-        n = len(cities_data)
-        k = min(5, n - 1)  # Conectar cada nodo con 5 vecinos cercanos
-        points = np.array([(lat, lon) for _, lat, lon in cities_data])
-        id_map = [city_id for city_id, _, _ in cities_data]
+            node: ID del nodo
 
-        # Para cada ciudad, encontrar k vecinos más cercanos
-        for i in range(n):
-            lat1, lon1 = points[i]
-            # Calcular distancias a todas las demás ciudades
-            distances = []
-            for j in range(n):
-                if i != j:
-                    lat2, lon2 = points[j]
-                    dist = self.calculate_distance(lat1, lon1, lat2, lon2)
-                    distances.append((j, dist))
-            # Ordenar por distancia y tomar k más cercanos
-            distances.sort(key=lambda x: x[1])
-            for j, dist in distances[:k]:
-                self.add_edge(id_map[i], id_map[j], dist)
+        Returns:
+            Lista de tuplas (vecino, distancia)
+        """
+        return self.adj_list.get(node, [])
+
+    def num_nodes(self) -> int:
+        """Retorna el número de nodos en el grafo"""
+        return len(self.adj_list)
+
+    def num_edges(self) -> int:
+        """Retorna el número de aristas en el grafo"""
+        return len(self.get_edges())

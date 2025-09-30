@@ -9,11 +9,14 @@ from graphmap.domain.model.entities.city import City
 
 class CityService:
     """Servicio para manejar la lógica de negocio relacionada con ciudades"""
-    
+
+    # Caché estático para evitar recargar el Excel en cada request
+    _cities_cache: List[City] = None
+
     def __init__(self, excel_file_path: str = "dataset.xlsx"):
         """
         Inicializa el servicio con la ruta del archivo Excel
-        
+
         Args:
             excel_file_path: Ruta al archivo Excel con los datos de ciudades
         """
@@ -21,18 +24,22 @@ class CityService:
     
     def load_cities_from_excel(self) -> List[City]:
         """
-        Carga todas las ciudades desde el archivo Excel
-        
+        Carga todas las ciudades desde el archivo Excel (con caché)
+
         Returns:
             Lista de objetos City con todos los datos del Excel
-            
+
         Raises:
             HTTPException: Si hay error al leer el archivo
         """
+        # Retornar desde caché si ya existe
+        if CityService._cities_cache is not None:
+            return CityService._cities_cache
+
         try:
             # Leer el archivo Excel
             df = pd.read_excel(self.excel_file_path)
-            
+
             # Convertir el DataFrame a una lista de objetos City
             cities = []
             for _, row in df.iterrows():
@@ -50,11 +57,13 @@ class CityService:
                     id=int(row["id"])
                 )
                 cities.append(city)
-            
+
+            # Guardar en caché
+            CityService._cities_cache = cities
             return cities
         except Exception as e:
             raise HTTPException(
-                status_code=500, 
+                status_code=500,
                 detail=f"Error loading data from Excel: {str(e)}"
             )
     
