@@ -13,7 +13,7 @@ app = FastAPI(
     version=settings.API_VERSION
 )
 
-# 🚀 OPTIMIZACIÓN: Compresión automática (reduce 70-80% el tamaño)
+#  Compresión automática (reduce 70-80% el tamaño)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # Configurar CORS Middleware

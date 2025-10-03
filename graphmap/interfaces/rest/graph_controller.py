@@ -1,7 +1,7 @@
 """
 Controlador para los endpoints relacionados con el grafo de proximidad
 """
-from fastapi import APIRouter, Query
+from fastapi import APIRouter
 from typing import Dict
 from graphmap.domain.services.graph_service import GraphService
 
@@ -17,31 +17,25 @@ graph_service = GraphService()
 
 
 @router.get("/edges")
-async def get_graph_edges(lightweight: bool = Query(False, description="Solo source/target sin distancias")):
+async def get_graph_edges():
     """
-    🚀 OPTIMIZACIÓN: Endpoint con modo ligero para máximo rendimiento
+    Endpoint optimizado automáticamente para conexiones del mapa
+    Retorna solo source y target (sin distancias)
     """
     edges = graph_service.get_graph_edges()
     
-    # Modo lightweight: solo conexiones sin distancias (reduce 30% el tamaño)
-    if lightweight:
-        light_edges = [
-            {
-                "source": edge["source"],
-                "target": edge["target"]
-            }
-            for edge in edges
-        ]
-        return {
-            "edges": light_edges,
-            "total_edges": len(light_edges),
-            "lightweight": True
+    # Datos automáticamente optimizados para conexiones
+    optimized_edges = [
+        {
+            "source": edge["source"],
+            "target": edge["target"]
         }
+        for edge in edges
+    ]
     
     return {
-        "edges": edges,
-        "total_edges": len(edges),
-        "lightweight": False
+        "edges": optimized_edges,
+        "total_edges": len(optimized_edges)
     }
 
 

@@ -42,7 +42,7 @@ class CityService:
             # Leer el archivo Excel
             df = pd.read_excel(self.excel_file_path)
 
-            # 🚀 OPTIMIZACIÓN: Vectorización de pandas (5x más rápido que iterrows)
+            #  Vectorización de pandas (5x más rápido que iterrows)
             df_records = df.to_dict('records')
             cities = []
             
