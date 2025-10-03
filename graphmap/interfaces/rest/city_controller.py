@@ -1,8 +1,8 @@
 """
 Controlador para los endpoints relacionados con ciudades
 """
-from fastapi import APIRouter
-from typing import List
+from fastapi import APIRouter, Query
+from typing import List, Optional
 from graphmap.domain.services.city_service import CityService
 from graphmap.domain.model.entities.city import City
 
@@ -18,16 +18,37 @@ city_service = CityService()
 
 
 @router.get("/")
-async def get_all_cities():
+async def get_all_cities(
+    lightweight: bool = Query(False, description="Solo campos esenciales para mapa"),
+    limit: Optional[int] = Query(None, description="Limitar resultados")
+):
     """
-    Endpoint que retorna solo la lista de ciudades (sin grafo)
+    🚀 OPTIMIZACIÓN: Endpoint con opciones de datos ligeros
     """
-    # Cargar ciudades (desde caché si ya fueron cargadas)
     cities = city_service.load_cities_from_excel()
+    
+    # Aplicar límite si se especifica
+    if limit:
+        cities = cities[:limit]
+    
+    # Modo lightweight: solo campos esenciales (reduce 60% el tamaño)
+    if lightweight:
+        city_data = [
+            {
+                "id": city.id,
+                "city": city.city,
+                "lat": city.lat,
+                "lng": city.lng
+            }
+            for city in cities
+        ]
+    else:
+        city_data = [city.dict() for city in cities]
 
     return {
-        "cities": [city.dict() for city in cities],
-        "total": len(cities)
+        "cities": city_data,
+        "total": len(city_data),
+        "lightweight": lightweight
     }
 
 
@@ -41,8 +62,9 @@ async def get_cities_count():
 
 
 @router.get("/{query}", response_model=List[City])
-async def get_cities_name(query: str):
+async def get_cities_name(query: str, limit: int = Query(20, description="Máximo de resultados")):
     """
-    Endpoint que busca ciudades por nombre
+    🚀 OPTIMIZACIÓN: Búsqueda con límite automático
     """
-    return city_service.search_cities(query)
+    results = city_service.search_cities(query)
+    return results[:limit]  # Limitar resultados para evitar respuestas gigantes

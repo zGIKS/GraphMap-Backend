@@ -12,6 +12,8 @@ class GraphService:
 
     # Caché estático del grafo para evitar reconstruirlo en cada request
     _graph_cache: CityGraph = None
+    # 🚀 OPTIMIZACIÓN: Cache de aristas formateadas (evita re-formatear en cada request)
+    _edges_cache: List[Dict] = None
 
     def __init__(self):
         self.city_service = CityService()
@@ -36,11 +38,17 @@ class GraphService:
         return graph
 
     def get_graph_edges(self) -> List[Dict]:
-        """Retorna las aristas del grafo en formato JSON"""
+        """🚀 OPTIMIZACIÓN: Retorna aristas con caché de formateo"""
+        
+        # Usar caché si existe
+        if GraphService._edges_cache is not None:
+            return GraphService._edges_cache
+        
+        # Construir y formatear solo una vez
         graph = self.build_city_graph()
-
         edges = graph.get_edges()
-        return [
+        
+        GraphService._edges_cache = [
             {
                 "source": u,
                 "target": v,
@@ -48,6 +56,8 @@ class GraphService:
             }
             for u, v, dist in edges
         ]
+        
+        return GraphService._edges_cache
 
     def get_graph_summary(self) -> Dict:
         """Retorna resumen del grafo: número de nodos y aristas"""

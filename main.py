@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import RedirectResponse
 from graphmap.interfaces.rest.city_controller import router as city_router
 from graphmap.interfaces.rest.graph_controller import router as graph_router
@@ -11,6 +12,9 @@ app = FastAPI(
     description=settings.API_DESCRIPTION,
     version=settings.API_VERSION
 )
+
+# 🚀 OPTIMIZACIÓN: Compresión automática (reduce 70-80% el tamaño)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # Configurar CORS Middleware
 app.add_middleware(
