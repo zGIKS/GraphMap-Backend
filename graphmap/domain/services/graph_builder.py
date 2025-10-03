@@ -12,11 +12,12 @@ class GraphBuilder:
     """Constructor de grafos de proximidad geográfica"""
 
     @staticmethod
-    def build_delaunay_graph(cities_data: List[Tuple[int, float, float]]) -> CityGraph:
+    def build_delaunay_graph(cities_data: List[Tuple[int, float, float]], max_distance_km: float = None) -> CityGraph:
         """Construye grafo usando triangulación de Delaunay con proyección Web Mercator
 
         Args:
             cities_data: Lista de tuplas (id_ciudad, latitud, longitud)
+            max_distance_km: Distancia máxima en km para conectar ciudades (None = sin límite)
 
         Returns:
             CityGraph con conexiones basadas en Delaunay
@@ -55,6 +56,8 @@ class GraphBuilder:
                     # Calcular distancia real en km usando Haversine
                     dist = GeoUtils.haversine_distance(lat1, lon1, lat2, lon2)
 
-                    graph.add_edge(id_map[idx_u], id_map[idx_v], dist)
+                    # Filtrar por distancia máxima si se especificó
+                    if max_distance_km is None or dist <= max_distance_km:
+                        graph.add_edge(id_map[idx_u], id_map[idx_v], dist)
 
         return graph

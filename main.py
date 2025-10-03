@@ -13,10 +13,7 @@ app = FastAPI(
     version=settings.API_VERSION
 )
 
-#  Compresión automática (reduce 70-80% el tamaño)
-app.add_middleware(GZipMiddleware, minimum_size=1000)
-
-# Configurar CORS Middleware
+# Configurar CORS Middleware (debe ir antes de otros middlewares)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
@@ -24,6 +21,9 @@ app.add_middleware(
     allow_methods=settings.CORS_ALLOW_METHODS,
     allow_headers=settings.CORS_ALLOW_HEADERS,
 )
+
+#  Compresión automática (reduce 70-80% el tamaño)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # Incluir los routers de los controladores
 app.include_router(city_router)

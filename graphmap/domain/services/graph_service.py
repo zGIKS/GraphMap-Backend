@@ -30,8 +30,9 @@ class GraphService:
         # Preparar datos: (id, lat, lng)
         cities_data = [(city.id, city.lat, city.lng) for city in cities]
 
-        # Construir grafo usando el builder
-        graph = GraphBuilder.build_delaunay_graph(cities_data)
+        # Construir grafo usando el builder con límite de distancia
+        # 500 km filtra conexiones irreales (ej: Hawaii-California)
+        graph = GraphBuilder.build_delaunay_graph(cities_data, max_distance_km=500)
 
         # Guardar en caché
         GraphService._graph_cache = graph
