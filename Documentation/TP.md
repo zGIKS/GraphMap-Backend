@@ -589,6 +589,26 @@ Alemán Romano, D. M. (2025). *GraphMap-Backend* (versión 1.0) [Repositorio Git
 
 Alemán Romano, D. M. (2025). *GraphMap-Frontend* (versión 1.0) [Repositorio GitHub]. GitHub. https://github.com/zGIKS/GraphMap-Frontend
 
+
+Snyder, J. P. (1987). *Map Projections: A Working Manual* (Professional Paper 1395). U.S. Geological Survey. https://doi.org/10.3133/pp1395
+
+
+Delaunay, B. (1934). Sur la sphère vide. *Bulletin de l'Académie des Sciences de l'URSS. Classe des sciences mathématiques et naturelles*, 6, 793–800.
+
+De Berg, M., Cheong, O., van Kreveld, M., & Overmars, M. (2008). *Computational Geometry: Algorithms and Applications* (3rd ed.). Springer-Verlag. https://doi.org/10.1007/978-3-540-77974-2
+
+
+Sinnott, R. W. (1984). Virtues of the Haversine. *Sky and Telescope*, 68(2), 159.
+
+Veness, C. (2002-2024). Calculate distance and bearing between two Latitude/Longitude points using Haversine formula in JavaScript. *Movable Type Scripts*. https://www.movable-type.co.uk/scripts/latlong.html
+
+
+Euler, L. (1758). Elementa doctrinae solidorum. *Novi Commentarii Academiae Scientiarum Petropolitanae*, 4, 109–140.
+
+Diestel, R. (2017). *Graph Theory* (5th ed.). Springer-Verlag. https://doi.org/10.1007/978-3-662-53622-3
+
+Cormen, T. H., Leiserson, C. E., Rivest, R. L., & Stein, C. (2022). *Introduction to Algorithms* (4th ed.). MIT Press. (Ya la tienes citada)
+
 </div>
 
 <!-- Salto de página compatible con HTML print / wkhtmltopdf / Chrome print -->
