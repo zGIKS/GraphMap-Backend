@@ -1,6 +1,15 @@
 [TOC]
 
+<!-- Salto de página compatible con HTML print / wkhtmltopdf / Chrome print -->
+
+<div style="page-break-after: always;"></div>
+
+
+
+
 # 1. Descripción del problema
+
+<div align="justify"
 
 Estados Unidos cuenta actualmente con una población superior a los 334 millones de habitantes (U.S. Census Bureau, 2024) distribuidos en miles de ciudades, pueblos y áreas metropolitanas conectadas por una vasta red vial y de transporte. Esta magnitud demográfica y territorial genera un ecosistema urbano complejo que demanda herramientas digitales de navegación y análisis geoespacial cada vez más precisas y escalables.
 
@@ -12,7 +21,13 @@ El proyecto GraphMap busca atender esta necesidad mediante el desarrollo de una 
 
 
 
+<!-- Salto de página compatible con HTML print / wkhtmltopdf / Chrome print -->
+
+<div style="page-break-after: always;"></div>
+
 ## 1.1 Contexto y Problemática Operativa
+
+
 
 El presente proyecto parte de un archivo de datos, excel de extensión por `.xlsx`, que contiene miles de registros de ciudades de Estados Unidos con identificador, nombre y coordenadas geográficas. A partir de esta base, el backend tiene la tarea de cargar y normalizar los datos, construir una estructura de grafo que represente relaciones de vecindad realistas entre ciudades y exponer únicamente los campos esenciales que requiere el cliente para el renderizado: los nodos con `id`, `lat`, `lng` y las aristas con `source` y `target`. Este enfoque permite que el frontend, basado en WebGL, procese grandes volúmenes de información geográfica de manera eficiente.
 
@@ -75,6 +90,10 @@ pero gracias al **caché estático**, la construcción ocurre **una sola vez** a
 Para el caso de estudio, que incluye **5 324 nodos** y **≈ 15 957 aristas**, estos costos son manejables siempre que se eviten reconstrucciones innecesarias y se implementen estrategias de caché. Este planteamiento operativo permite que el sistema ofrezca una visualización masiva, precisa e interactiva de grafos geográficos con capacidad de consulta en tiempo real, logrando un equilibrio entre rendimiento y fidelidad espacial.
 
 
+
+<!-- Salto de página compatible con HTML print / wkhtmltopdf / Chrome print -->
+
+<div style="page-break-after: always;"></div>
 
 ## 1.2 Fundamentación Algorítmica
 
@@ -301,6 +320,10 @@ Resumen de Complejidades por Operación
 | Consulta de aristas | $\mathcal{O}(E)$ | `graph_service.py:40-60` |
 | Caché (requests subsecuentes) | $\mathcal{O}(1)$ grafo + $\mathcal{O}(E)$ iteración | `graph_service.py:24-25` |
 
+<!-- Salto de página compatible con HTML print / wkhtmltopdf / Chrome print -->
+
+<div style="page-break-after: always;"></div>
+
 ## 1.3 Relevancia y Objetivos del Estudio
 
 1. **ABET 4 - Responsabilidad y ética** 
@@ -328,6 +351,10 @@ La precisión lograda mediante la Triangulación de Delaunay y el filtro Haversi
 - La robustez del *backend* para manejar miles de nodos y decenas de miles de aristas sin agotar recursos se alinea con la meta de "Alcanzar la mayor calidad, efectividad y dignidad en los procesos y productos del trabajo profesional".
 - Al evitar conexiones irreales y ser robusto frente a datos incompletos , se cumple con el principio de aceptar la completa responsabilidad de su trabajo y de proporcionar una evaluación completa de las consecuencias del sistema.
 
+<!-- Salto de página compatible con HTML print / wkhtmltopdf / Chrome print -->
+
+<div style="page-break-after: always;"></div>
+
 # 2. Descripción y visualización del conjunto de datos (dataset)
 
 Este capítulo detalla la transformación del dataset geográfico de SimpleMaps en un grafo navegable de proximidad. Se aborda desde la adquisición y caracterización de los datos hasta la construcción algorítmica del grafo y su posterior análisis estadístico y visual.
@@ -351,6 +378,10 @@ El proceso de adquisición fue el siguiente:
    - **Estandarizar** las columnas de coordenadas para su uso directo en las operaciones de proyección Web Mercator y la implementación de la Triangulación de Delaunay.
 
 Este origen de datos garantiza una base geográfica estandarizada y confiable para la aplicación de los algoritmos de complejidad.
+
+<!-- Salto de página compatible con HTML print / wkhtmltopdf / Chrome print -->
+
+<div style="page-break-after: always;"></div>
 
 ## 2.2 Características del dataset
 
@@ -387,6 +418,10 @@ El conjunto de datos incluye las siguientes columnas principales:
 - **source, target**: Identificadores de las ciudades conectadas
 - **distance**: Distancia geodésica en kilómetros calculada con fórmula de Haversine
 
+<!-- Salto de página compatible con HTML print / wkhtmltopdf / Chrome print -->
+
+<div style="page-break-after: always;"></div>
+
 ## 2.3 Preprocesamiento y construcción del grafo
 
 El proceso de construcción del grafo de proximidad geográfica se ejecuta mediante una secuencia de pasos optimizados que transforman el dataset de ciudades en una estructura navegable. A continuación se describen las etapas implementadas:
@@ -422,7 +457,9 @@ Tras la aplicación de los algoritmos de triangulación de Delaunay y filtrado p
 • **Relación E/V:** 2.99 ≈ 3 confirma estructura planar según teorema de Euler
 • **Cobertura territorial:** Continental de Estados Unidos
 
+<!-- Salto de página compatible con HTML print / wkhtmltopdf / Chrome print -->
 
+<div style="page-break-after: always;"></div>
 
 ## 2.5 Visualización
 
@@ -458,6 +495,10 @@ La visualización del grafo construido permite validar tanto la correcta aplicac
 
 **Descripción**: Zona específica de Juneau y el sureste de Alaska, mostrando la formación de pequeños clusters aislados debido a la geografía montañosa y la distribución dispersa de ciudades en esta región. Representa un caso particular donde la topografía natural limita la conectividad entre asentamientos urbanos.
 
+<!-- Salto de página compatible con HTML print / wkhtmltopdf / Chrome print -->
+
+<div style="page-break-after: always;"></div>
+
 # 3. Propuesta
 
 Este capítulo presenta la solución técnica desarrollada para transformar datasets geográficos masivos en grafos navegables interactivos, enfocándose en los objetivos específicos y las técnicas algorítmicas implementadas.
@@ -474,6 +515,10 @@ Este capítulo presenta la solución técnica desarrollada para transformar data
 • Garantizar tiempo de respuesta < 100ms para consultas del grafo mediante caché estático
 
 **Enfoque Open Source:** El proyecto utiliza exclusivamente tecnologías de código abierto (Python, FastAPI, SciPy, NumPy) para asegurar reproducibilidad y accesibilidad académica.
+
+<!-- Salto de página compatible con HTML print / wkhtmltopdf / Chrome print -->
+
+<div style="page-break-after: always;"></div>
 
 ## 3.2 Técnicas a utilizar
 
@@ -492,6 +537,10 @@ Calcula distancia geodésica real sobre la superficie esférica terrestre. Más 
 **4. Lista de Adyacencia**
 $$M(V,E) \in \mathcal{O}(V + E) = \mathcal{O}(V) \text{ para grafos planares}$$
 Estructura de datos que almacena vecinos de cada nodo como lista de tuplas (vecino, distancia). Optimiza consultas de vecindad y recorridos del grafo.
+
+<!-- Salto de página compatible con HTML print / wkhtmltopdf / Chrome print -->
+
+<div style="page-break-after: always;"></div>
 
 
 # 4. Diseño del aplicativo
@@ -514,11 +563,17 @@ Estructura de datos que almacena vecinos de cada nodo como lista de tuplas (veci
 
 ## 5.4 Pruebas de robustez y límites
 
+<!-- Salto de página compatible con HTML print / wkhtmltopdf / Chrome print -->
 
+<div style="page-break-after: always;"></div>
 
 # 6. Conclusiones
 
 El proyecto GraphMap logró con éxito el objetivo de transformar un *dataset* geográfico masivo de 5,324 ciudades de Estados Unidos en un grafo de proximidad navegable con 15,957 aristas, manteniendo una complejidad de construcción óptima de $O(nlogn)$ dominada por la Triangulación de Delaunay. Este resultado se obtuvo mediante una estrategia híbrida que combinó la eficiencia geométrica de la Proyección Web Mercator con la precisión geodésica de la fórmula de Haversine para filtrar conexiones irreales (limitadas a 500 km), asegurando así la fidelidad espacial del grafo. Al implementar un caché estático y una estructura de lista de adyacencia, el sistema garantiza respuestas rápidas (O(E)) para la visualización WebGL de gran escala, demostrando la capacidad de emitir juicios informados que equilibran el rendimiento algorítmico con la precisión del mundo real.
+
+<!-- Salto de página compatible con HTML print / wkhtmltopdf / Chrome print -->
+
+<div style="page-break-after: always;"></div>
 
 # 7. Bibliografía
 
@@ -530,7 +585,15 @@ SimpleMaps. (2024). *US Cities Database*. [Dataset]. SimpleMaps. https://simplem
 
 U.S. Census Bureau. (2024, December). Population estimates. *U.S. Census Bureau*. https://www.census.gov/library/stories/2024/12/population-estimates.html
 
+Alemán Romano, D. M. (2025). *GraphMap-Backend* (versión 1.0) [Repositorio GitHub]. GitHub. https://github.com/zGIKS/GraphMap-Backend
 
+Alemán Romano, D. M. (2025). *GraphMap-Frontend* (versión 1.0) [Repositorio GitHub]. GitHub. https://github.com/zGIKS/GraphMap-Frontend
+
+</div>
+
+<!-- Salto de página compatible con HTML print / wkhtmltopdf / Chrome print -->
+
+<div style="page-break-after: always;"></div>
 
 # Anexos
 
