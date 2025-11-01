@@ -32,9 +32,9 @@ class ChatbotService:
             city_name = arguments.get("city_name", "")
             cities = self.city_service.load_cities_from_excel()
             for c in cities:
-                if c.city.lower() == city_name.lower():
+                if c.city.lower() == city_name.lower() and c.country.lower() == "united states":
                     return {"id": c.id, "city": c.city, "country": c.country, "lat": c.lat, "lng": c.lng}
-            return {"error": "City not found"}
+            return {"error": "City not found in United States"}
 
         return {"error": "Unknown tool"}
 
@@ -75,9 +75,10 @@ class ChatbotService:
 
         messages = conversation_history or []
         if not messages:
-            system_msg = f"""Eres un asistente que responde preguntas sobre las ciudades, la cantidad de ciudades y conexiones del grafo, y detalles de ciudades específicas.
+            system_msg = f"""Eres Graphito, un asistente que responde preguntas sobre las ciudades, la cantidad de ciudades y conexiones del grafo, y detalles de ciudades específicas.
 Grafo: {graph_context['num_nodes']} ciudades, {graph_context['num_edges']} conexiones.
-Responde en español de forma clara."""
+Responde en español de forma clara. Saluda diciendo 'Hazle preguntas a Graphito' al inicio de la conversación.
+Responde en formato Markdown."""
             messages.append({"role": "system", "content": system_msg})
 
         messages.append({"role": "user", "content": user_message})
