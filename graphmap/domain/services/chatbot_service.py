@@ -8,6 +8,10 @@ from config import settings
 from graphmap.domain.services.graph_service import GraphService
 from graphmap.domain.services.city_service import CityService
 
+CACHED_RESPONSES = {
+    "hola": "¡Hola! Hazle preguntas a Graphito. Puedo ayudarte con información sobre ciudades y el grafo.",
+    "ayuda": "Puedo responder sobre: cantidad de ciudades/conexiones, buscar ciudad específica por nombre.",
+}
 
 class ChatbotService:
     """Servicio para IA"""
@@ -20,120 +24,54 @@ class ChatbotService:
     def _execute_tool(self, tool_name: str, arguments: Dict) -> Dict:
         if tool_name == "get_graph_summary":
             return self.graph_service.get_graph_summary()
-
-        elif tool_name == "get_cities":
-            cities = self.city_service.load_cities_from_excel()
-            return {
-                "total": len(cities),
-                "cities": [{"id": c.id, "name": c.city, "country": c.country} for c in cities]
-            }
-
         elif tool_name == "get_city_details":
             city_name = arguments.get("city_name", "")
-            cities = self.city_service.load_cities_from_excel()
-            for c in cities:
-                if c.city.lower() == city_name.lower() and c.country.lower() == "united states":
-                    return {"id": c.id, "city": c.city, "country": c.country, "lat": c.lat, "lng": c.lng}
-            return {"error": "City not found in United States"}
-
+            results = self.city_service.search_cities(city_name)
+            if results:
+                c = results[0]
+                return {"id": c.id, "city": c.city, "country": c.country, "lat": c.lat, "lng": c.lng}
+            return {"error": "City not found"}
         return {"error": "Unknown tool"}
 
     def chat(self, user_message: str, conversation_history: Optional[list] = None) -> Dict:
-        graph_context = self.graph_service.get_graph_summary()
-        tools = [
-            {
-                "type": "function",
-                "function": {
-                    "name": "get_graph_summary",
-                    "description": "Obtiene la cantidad de ciudades y conexiones",
-                    "parameters": {"type": "object", "properties": {}}
-                }
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "get_cities",
-                    "description": "Lista las ciudades disponibles",
-                    "parameters": {"type": "object", "properties": {}}
-                }
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "get_city_details",
-                    "description": "Obtiene detalles de una ciudad específica por nombre",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "city_name": {"type": "string", "description": "Nombre de la ciudad"}
-                        },
-                        "required": ["city_name"]
-                    }
-                }
-            }
-        ]
+        msg_lower = user_message.lower().strip()
+        if msg_lower in CACHED_RESPONSES:
+            return {"response": CACHED_RESPONSES[msg_lower], "conversation_history": [], "tool_used": False}
 
         messages = conversation_history or []
+        if len(messages) > 8:
+            messages = [messages[0]] + messages[-7:]
+
         if not messages:
-            system_msg = f"""Eres Graphito, un asistente que responde preguntas sobre las ciudades, la cantidad de ciudades y conexiones del grafo, y detalles de ciudades específicas.
-Grafo: {graph_context['num_nodes']} ciudades, {graph_context['num_edges']} conexiones.
-Responde en español de forma clara. Saluda diciendo 'Hazle preguntas a Graphito' al inicio de la conversación.
-Responde en formato Markdown."""
+            ctx = self.graph_service.get_graph_summary()
+            system_msg = f"Asistente Graphito. {ctx['num_nodes']} ciudades, {ctx['num_edges']} conexiones. Responde en español y Markdown."
             messages.append({"role": "system", "content": system_msg})
 
         messages.append({"role": "user", "content": user_message})
 
+        tools = [
+            {"type": "function", "function": {"name": "get_graph_summary", "description": "Cantidad de ciudades y conexiones", "parameters": {"type": "object", "properties": {}}}},
+            {"type": "function", "function": {"name": "get_city_details", "description": "Detalles de ciudad por nombre", "parameters": {"type": "object", "properties": {"city_name": {"type": "string"}}, "required": ["city_name"]}}}
+        ]
+
         response = self.client.chat.completions.create(
-            model="deepseek-chat",
-            messages=messages,
-            tools=tools,
-            temperature=0.7,
-            max_tokens=300
+            model="deepseek-chat", messages=messages, tools=tools, temperature=0.3, max_tokens=200
         )
 
         assistant_message = response.choices[0].message
 
         if assistant_message.tool_calls:
             messages.append({
-                "role": "assistant",
-                "content": assistant_message.content or "",
-                "tool_calls": [
-                    {
-                        "id": tc.id,
-                        "type": tc.type,
-                        "function": {"name": tc.function.name, "arguments": tc.function.arguments}
-                    } for tc in assistant_message.tool_calls
-                ]
+                "role": "assistant", "content": assistant_message.content or "",
+                "tool_calls": [{"id": tc.id, "type": tc.type, "function": {"name": tc.function.name, "arguments": tc.function.arguments}} for tc in assistant_message.tool_calls]
             })
-
             for tool_call in assistant_message.tool_calls:
-                args = json.loads(tool_call.function.arguments)
-                result = self._execute_tool(tool_call.function.name, args)
-                messages.append({
-                    "role": "tool",
-                    "tool_call_id": tool_call.id,
-                    "content": json.dumps(result)
-                })
+                result = self._execute_tool(tool_call.function.name, json.loads(tool_call.function.arguments))
+                messages.append({"role": "tool", "tool_call_id": tool_call.id, "content": json.dumps(result)})
 
-            final_response = self.client.chat.completions.create(
-                model="deepseek-chat",
-                messages=messages,
-                temperature=0.7,
-                max_tokens=300
-            )
-
-            final_msg = final_response.choices[0].message
-            messages.append({"role": "assistant", "content": final_msg.content or ""})
-
-            return {
-                "response": final_msg.content,
-                "conversation_history": messages,
-                "tool_used": True
-            }
+            final = self.client.chat.completions.create(model="deepseek-chat", messages=messages, temperature=0.3, max_tokens=200)
+            messages.append({"role": "assistant", "content": final.choices[0].message.content or ""})
+            return {"response": final.choices[0].message.content, "conversation_history": messages, "tool_used": True}
 
         messages.append({"role": "assistant", "content": assistant_message.content or ""})
-        return {
-            "response": assistant_message.content,
-            "conversation_history": messages,
-            "tool_used": False
-        }
+        return {"response": assistant_message.content, "conversation_history": messages, "tool_used": False}
