@@ -4,6 +4,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import RedirectResponse
 from graphmap.interfaces.rest.city_controller import router as city_router
 from graphmap.interfaces.rest.graph_controller import router as graph_router
+from graphmap.interfaces.rest.chatbot_controller import router as chatbot_router
 from config import settings
 
 # Crear aplicación FastAPI con configuración centralizada
@@ -28,6 +29,7 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 # Incluir los routers de los controladores
 app.include_router(city_router)
 app.include_router(graph_router)
+app.include_router(chatbot_router)
 
 @app.get("/")
 async def root():
