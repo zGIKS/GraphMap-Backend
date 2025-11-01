@@ -40,6 +40,9 @@ class Settings:
     PORT: int = int(os.getenv("PORT", "8000"))
     RELOAD: bool = os.getenv("RELOAD", "true").lower() == "true"
 
+    # API Keys
+    DEEPSEEK_API_KEY: str = os.getenv("DEEPSEEK_API_KEY", "")
+
 
 # Instancia global de configuración
 settings = Settings()

@@ -22,8 +22,7 @@ city_service = CityService()
 @router.get("/edges")
 async def get_graph_edges():
     """
-    Endpoint optimizado automáticamente para conexiones del mapa
-    Retorna solo source y target (sin distancias)
+    Endpoint que retorna las conexiones del grafo
     """
     edges = graph_service.get_graph_edges()
     
