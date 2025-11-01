@@ -41,7 +41,8 @@ class Settings:
     RELOAD: bool = os.getenv("RELOAD", "true").lower() == "true"
 
     # API Keys
-    DEEPSEEK_API_KEY: str = os.getenv("DEEPSEEK_API_KEY", "")
+    DEEPSEEK_API_KEY: str = os.getenv("DEEPSEEK_API_KEY")
+    DEEPSEEK_BASE_URL: str = os.getenv("DEEPSEEK_BASE_URL")
 
 
 # Instancia global de configuración
