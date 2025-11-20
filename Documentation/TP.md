@@ -542,16 +542,64 @@ Estructura de datos que almacena vecinos de cada nodo como lista de tuplas (veci
 
 <div style="page-break-after: always;"></div>
 
-
 # 4. Diseño del aplicativo
+
+En esta sección se describe la arquitectura del sistema **GraphMap**, detallando los módulos principales y el flujo de datos entre el servidor de procesamiento y la interfaz de visualización.
 
 ## 4.1 Arquitectura Tecnológica
 
+La solución adopta una arquitectura Cliente-Servidor desacoplada, comunicándose a través de una API REST. El diseño prioriza el rendimiento para manejar visualizaciones masivas (WebGL) y cálculos geométricos complejos ($O(n \log n)$).
+
+**Backend :**
+
+- **FastAPI y Uvicorn:** Exposición de endpoints REST de alto rendimiento y manejo asíncrono de solicitudes.
+
+- **SciPy y NumPy:** Ejecución de algoritmos científicos, específicamente la Triangulación de Delaunay y operaciones vectorizadas para la construcción del grafo.
+
+- **Pandas:** Manipulación eficiente y carga del dataset en formato Excel.
+
+  
+
+**Frontend :**
+
+- **React y TypeScript:** Construcción de la interfaz de usuario modular y tipada.
+- **Sigma.js y WebGL:** Motor de renderizado acelerado por hardware, esencial para visualizar más de 5,000 nodos y 15,000 aristas fluidamente.
+- **Vite:** Empaquetado optimizado y carga rápida de módulos.
+
 ## 4.2 Módulo de Procesamiento de Datos
+
+Este módulo gestiona el ciclo de vida de la información, desde la ingesta del archivo crudo hasta la exposición de la estructura de grafo optimizada. Se implementa principalmente en los servicios `CityService` y `GraphService`.
+
+
+
+1. **Ingesta y Normalización:** Carga vectorizada del archivo `.xlsx` mediante Pandas, transformando los registros en entidades `City` y eliminando datos no esenciales para reducir el uso de memoria.
+
+2. **Proyección Geométrica:** Conversión de coordenadas geográficas (Latitud/Longitud) a proyección Web Mercator para operar en un plano euclidiano, facilitando los cálculos geométricos posteriores.
+
+3. **Construcción Topológica:** Aplicación del algoritmo de Triangulación de Delaunay (SciPy) sobre los puntos proyectados para generar una malla de conectividad natural.
+
+4. **Filtrado y Estructuración:** Cálculo de distancias geodésicas reales para cada conexión candidata, descartando aquellas mayores a 500 km. El resultado se almacena en una lista de adyacencia bidireccional y se persiste en un caché estático para respuestas $O(1)$ en consultas subsiguientes.
+
+   
 
 ## 4.3 Módulo de Lógica de Ruteo
 
+Este módulo, encapsulado en el `PathfindingService`, es responsable de calcular las rutas óptimas sobre el grafo construido.
+
+- **Algoritmo A\* (A-Star):** Se utiliza para la búsqueda del camino más corto entre dos ciudades. A diferencia de Dijkstra, A* utiliza una heurística para dirigir la búsqueda hacia el objetivo, mejorando la eficiencia ($O(E \log V)$).
+- **Heurística Admisible:** Se emplea la distancia Haversine como función heurística $h(n)$, garantizando que el algoritmo encuentre siempre la ruta óptima si esta existe.
+- **Respuesta Estructurada:** El servicio retorna no solo la secuencia de nodos de la ruta, sino métricas clave como la distancia total en kilómetros, el número de ciudades exploradas y la longitud en saltos, permitiendo al frontend visualizar el costo computacional de la búsqueda.
+
 ## 4.4 Módulo de Interfaz y Visualización
+
+La interfaz gráfica, desarrollada en React, orquesta la interacción del usuario y la visualización de datos masivos utilizando `GraphViewer` como componente central.
+
+
+
+- **Renderizado de Grafos (WebGL):** Utiliza `Sigma.js` para dibujar miles de nodos y aristas aprovechando la GPU. Los nodos se posicionan usando sus coordenadas geográficas reales, con colores dinámicos según el tema (claro/oscuro).
+- **Interacción y Navegación:** Permite zoom y paneo fluido. La selección de ciudades (origen y destino) dispara peticiones al backend, visualizando la ruta resultante mediante un resaltado de aristas en color naranja y ajustando el grosor para destacar el camino sobre la malla base.
+- **Asistente Inteligente (Chatbot):** Integra un componente flotante conectado al `ChatbotService` del backend (vía DeepSeek), permitiendo consultas en lenguaje natural sobre estadísticas del grafo o detalles de ciudades, con respuestas formateadas en Markdown.
+- **Gestión de Estado:** Implementa *debouncing* para búsquedas optimizadas y gestiona la carga asíncrona de datos, mostrando indicadores de progreso y manejando errores de compatibilidad WebGL.
 
 # 5. Validación de resultados y pruebas
 
