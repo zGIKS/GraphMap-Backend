@@ -24,10 +24,18 @@ class Settings:
     )
 
     # CORS Configuration
-    CORS_ORIGINS: List[str] = os.getenv(
-        "CORS_ORIGINS",
-        "http://localhost:3000,http://localhost:5173"
-    ).split(",")
+    # Allow specifying a single '*' to allow all origins. Otherwise provide
+    # a comma-separated list of origins (e.g. http://localhost:3000,https://app.example.com)
+    # If not set, defaults to empty (no origins allowed)
+    _CORS_RAW: str = os.getenv("CORS_ORIGINS", "")
+
+    if _CORS_RAW.strip() == "*":
+        CORS_ORIGINS: List[str] = ["*"]
+    elif _CORS_RAW.strip() == "":
+        CORS_ORIGINS: List[str] = []
+    else:
+        CORS_ORIGINS: List[str] = [s.strip() for s in _CORS_RAW.split(",") if s.strip()]
+
     CORS_ALLOW_CREDENTIALS: bool = os.getenv("CORS_ALLOW_CREDENTIALS", "true").lower() == "true"
     CORS_ALLOW_METHODS: List[str] = ["*"]
     CORS_ALLOW_HEADERS: List[str] = ["*"]
@@ -37,7 +45,7 @@ class Settings:
 
     # Server Configuration
     HOST: str = os.getenv("HOST", "127.0.0.1")
-    PORT: int = int(os.getenv("PORT", "8000"))
+    PORT: int = int(os.getenv("PORT", "8301"))
     RELOAD: bool = os.getenv("RELOAD", "true").lower() == "true"
 
     # API Keys
@@ -47,3 +55,7 @@ class Settings:
 
 # Instancia global de configuración
 settings = Settings()
+
+# Si se permitió cualquier origen ('*'), no usar credenciales por seguridad
+if settings.CORS_ORIGINS == ["*"] and settings.CORS_ALLOW_CREDENTIALS:
+    settings.CORS_ALLOW_CREDENTIALS = False
