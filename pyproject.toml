@@ -3,11 +3,10 @@ name = "tf"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12,<3.13"
 dependencies = [
     "fastapi>=0.117.1",
     "uvicorn[standard]>=0.37.0",
-    "pandas>=2.0.0",
     "openpyxl>=3.1.0",
     "pydantic>=2.0.0",
     "openai>=2.6.1",
