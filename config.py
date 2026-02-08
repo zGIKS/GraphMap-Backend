@@ -2,11 +2,14 @@
 Configuración centralizada de la aplicación usando variables de entorno
 """
 import os
+from pathlib import Path
 from typing import List
 from dotenv import load_dotenv
 
 # Cargar variables de entorno desde .env
 load_dotenv()
+
+BASE_DIR = Path(__file__).resolve().parent
 
 
 class Settings:
@@ -41,7 +44,12 @@ class Settings:
     CORS_ALLOW_HEADERS: List[str] = ["*"]
 
     # Database/Files
-    DATASET_PATH: str = os.getenv("DATASET_PATH", "dataset.xlsx")
+    _DATASET_RAW: str = os.getenv("DATASET_PATH", "dataset.xlsx")
+    DATASET_PATH: str = str(
+        Path(_DATASET_RAW)
+        if Path(_DATASET_RAW).is_absolute()
+        else BASE_DIR / _DATASET_RAW
+    )
 
     # Server Configuration
     HOST: str = os.getenv("HOST", "127.0.0.1")

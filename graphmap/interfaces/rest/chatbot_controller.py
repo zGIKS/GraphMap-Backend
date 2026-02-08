@@ -1,10 +1,13 @@
 """
 Controlador para el endpoint del chatbot
 """
+import logging
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Dict, Optional
 from graphmap.domain.services.chatbot_service import ChatbotService
+
+logger = logging.getLogger(__name__)
 
 # Crear router
 router = APIRouter(
@@ -26,7 +29,7 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     """Modelo para solicitud de chat"""
     message: str
-    conversation_history: Optional[List[Dict]] = []
+    conversation_history: Optional[List[Dict]] = Field(default_factory=list)
 
 
 class ChatResponse(BaseModel):
@@ -53,8 +56,9 @@ async def chat_with_bot(request: ChatRequest):
             tool_used=result["tool_used"]
         )
 
-    except Exception as e:
+    except Exception:
+        logger.exception("Chat processing failed")
         raise HTTPException(
             status_code=500,
-            detail=f"Error processing chat: {str(e)}"
+            detail="Error processing chat"
         )
