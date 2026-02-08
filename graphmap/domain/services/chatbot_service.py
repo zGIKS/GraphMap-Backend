@@ -17,9 +17,19 @@ class ChatbotService:
     """Servicio para IA"""
 
     def __init__(self):
-        self.client = OpenAI(api_key=settings.DEEPSEEK_API_KEY, base_url=settings.DEEPSEEK_BASE_URL)
+        self.client = None
+        self.api_key = settings.DEEPSEEK_API_KEY
+        self.base_url = settings.DEEPSEEK_BASE_URL
         self.graph_service = GraphService()
         self.city_service = CityService()
+
+    def _get_client(self) -> OpenAI:
+        if self.client is not None:
+            return self.client
+        if not self.api_key:
+            raise RuntimeError("Chat service is not configured")
+        self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+        return self.client
 
     def _execute_tool(self, tool_name: str, arguments: Dict) -> Dict:
         if tool_name == "get_graph_summary":
@@ -34,6 +44,7 @@ class ChatbotService:
         return {"error": "Unknown tool"}
 
     def chat(self, user_message: str, conversation_history: Optional[list] = None) -> Dict:
+        client = self._get_client()
         msg_lower = user_message.lower().strip()
         if msg_lower in CACHED_RESPONSES:
             return {"response": CACHED_RESPONSES[msg_lower], "conversation_history": [], "tool_used": False}
@@ -54,7 +65,7 @@ class ChatbotService:
             {"type": "function", "function": {"name": "get_city_details", "description": "Detalles de ciudad por nombre", "parameters": {"type": "object", "properties": {"city_name": {"type": "string"}}, "required": ["city_name"]}}}
         ]
 
-        response = self.client.chat.completions.create(
+        response = client.chat.completions.create(
             model="deepseek-chat", messages=messages, tools=tools, temperature=0.3, max_tokens=200
         )
 
@@ -69,7 +80,7 @@ class ChatbotService:
                 result = self._execute_tool(tool_call.function.name, json.loads(tool_call.function.arguments))
                 messages.append({"role": "tool", "tool_call_id": tool_call.id, "content": json.dumps(result)})
 
-            final = self.client.chat.completions.create(model="deepseek-chat", messages=messages, temperature=0.3, max_tokens=200)
+            final = client.chat.completions.create(model="deepseek-chat", messages=messages, temperature=0.3, max_tokens=200)
             messages.append({"role": "assistant", "content": final.choices[0].message.content or ""})
             return {"response": final.choices[0].message.content, "conversation_history": messages, "tool_used": True}
 

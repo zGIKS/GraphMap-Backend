@@ -56,6 +56,12 @@ async def chat_with_bot(request: ChatRequest):
             tool_used=result["tool_used"]
         )
 
+    except RuntimeError:
+        logger.exception("Chat processing failed")
+        raise HTTPException(
+            status_code=503,
+            detail="Chat service is not configured"
+        )
     except Exception:
         logger.exception("Chat processing failed")
         raise HTTPException(
