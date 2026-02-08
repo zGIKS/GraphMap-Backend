@@ -3,7 +3,7 @@ Configuración centralizada de la aplicación usando variables de entorno
 """
 import os
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 from dotenv import load_dotenv
 
 # Cargar variables de entorno desde .env
@@ -31,6 +31,8 @@ class Settings:
     # a comma-separated list of origins (e.g. http://localhost:3000,https://app.example.com)
     # If not set, defaults to empty (no origins allowed)
     _CORS_RAW: str = os.getenv("CORS_ORIGINS", "")
+    # Optional regex for dynamic preview URLs, e.g. ^https://.*\.vercel\.app$
+    CORS_ORIGIN_REGEX: Optional[str] = os.getenv("CORS_ORIGIN_REGEX")
 
     if _CORS_RAW.strip() == "*":
         CORS_ORIGINS: List[str] = ["*"]

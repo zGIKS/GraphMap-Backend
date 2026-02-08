@@ -79,6 +79,8 @@ uvicorn main:app --reload
 
 La API estará disponible en `http://localhost:8000/docs` con documentación Swagger automática.
 
+![documentacion swagger](Documentation/assets/swagger.png)
+
 ### Tecnologías Utilizadas
 
 - **Python 3.12+**
