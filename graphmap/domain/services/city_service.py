@@ -2,7 +2,7 @@
 Servicio para manejar operaciones relacionadas con ciudades
 """
 from typing import List
-import pandas as pd
+from openpyxl import load_workbook
 from fastapi import HTTPException
 from graphmap.domain.model.entities.city import City
 from config import settings
@@ -39,16 +39,31 @@ class CityService:
             return CityService._cities_cache
 
         try:
-            # Leer el archivo Excel
-            df = pd.read_excel(self.excel_file_path)
+            # Leer el archivo Excel con openpyxl para evitar dependencias pesadas en serverless.
+            workbook = load_workbook(self.excel_file_path, data_only=True, read_only=True)
+            worksheet = workbook.active
 
-            #  Vectorización de pandas (5x más rápido que iterrows)
-            df_records = df.to_dict('records')
+            rows = worksheet.iter_rows(values_only=True)
+            headers = next(rows, None)
+            if not headers:
+                return []
+
+            header_index = {str(name): idx for idx, name in enumerate(headers) if name is not None}
+            required = [
+                "city", "city_ascii", "lat", "lng", "country",
+                "iso2", "iso3", "admin_name", "capital", "population", "id"
+            ]
+            missing = [name for name in required if name not in header_index]
+            if missing:
+                raise ValueError(f"Missing required columns in dataset: {missing}")
+
             cities = []
-            
-            for record in df_records:
-                population = int(record["population"]) if pd.notna(record["population"]) else None
-                
+
+            for row in rows:
+                record = {name: row[header_index[name]] for name in required}
+                population_raw = record["population"]
+                population = int(population_raw) if population_raw is not None else None
+
                 city = City(
                     city=str(record["city"]),
                     city_ascii=str(record["city_ascii"]),
@@ -63,6 +78,8 @@ class CityService:
                     id=int(record["id"])
                 )
                 cities.append(city)
+
+            workbook.close()
 
             # Guardar en caché
             CityService._cities_cache = cities

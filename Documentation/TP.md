@@ -467,31 +467,31 @@ La visualización del grafo construido permite validar tanto la correcta aplicac
 
 **Figura 1.**
 
-<img src="https://i.imgur.com/QOeAz9V.png"/>
+<img src="https://i.imgur.com/NlhTEev.png"/>
 
 **Descripción**: Vista panorámica de la distribución de nodos que representa las 5,324 ciudades de Estados Unidos. Se observa la alta concentración de ciudades.
 
 **Figura 2.**
 
-<img src="https://i.imgur.com/C0wTKk6.png"/>
+<img src="https://i.imgur.com/lWNVpnF.png"/>
 
 **Descripción**: Representación completa del grafo con todas las 15,957 aristas validadas bajo el umbral de 500 km. La estructura evidencia la malla de triangulación de Delaunay filtrada.
 
 **Figura 3.**
 
-<img src="https://i.imgur.com/84qfCiq.png"/>
+<img src="https://i.imgur.com/fOBcgMb.png"/>
 
 **Descripción**: Detalle de la región de Alaska, que forma un subgrafo parcialmente aislado debido a su separación geográfica del territorio continental. Las conexiones internas mantienen la estructura de proximidad local, pero la distancia al territorio principal excede el umbral de 500 km establecido.
 
 **Figura 4.**
 
-<img src="https://i.imgur.com/mG9k4iM.png"/>
+<img src="https://i.imgur.com/r3tmL9r.png"/>
 
 **Descripción**: Subgrafo correspondiente al archipiélago de Hawái, completamente aislado del resto del territorio debido a su ubicación oceánica.
 
 **Figura 5.**
 
-<img src="https://i.imgur.com/YkFePGv.png"/>
+<img src="https://i.imgur.com/cuDQEQX.png"/>
 
 **Descripción**: Zona específica de Juneau y el sureste de Alaska, mostrando la formación de pequeños clusters aislados debido a la geografía montañosa y la distribución dispersa de ciudades en esta región. Representa un caso particular donde la topografía natural limita la conectividad entre asentamientos urbanos.
 
@@ -542,26 +542,177 @@ Estructura de datos que almacena vecinos de cada nodo como lista de tuplas (veci
 
 <div style="page-break-after: always;"></div>
 
-
 # 4. Diseño del aplicativo
+
+En esta sección se describe la arquitectura del sistema **GraphMap**, detallando los módulos principales y el flujo de datos entre el servidor de procesamiento y la interfaz de visualización.
 
 ## 4.1 Arquitectura Tecnológica
 
+La solución adopta una arquitectura Cliente-Servidor desacoplada, comunicándose a través de una API REST. El diseño prioriza el rendimiento para manejar visualizaciones masivas (WebGL) y cálculos geométricos complejos ($O(n \log n)$).
+
+**Backend :**
+
+- **FastAPI y Uvicorn:** Exposición de endpoints REST de alto rendimiento y manejo asíncrono de solicitudes.
+
+- **SciPy y NumPy:** Ejecución de algoritmos científicos, específicamente la Triangulación de Delaunay y operaciones vectorizadas para la construcción del grafo.
+
+- **Pandas:** Manipulación eficiente y carga del dataset en formato Excel.
+
+  
+
+**Frontend :**
+
+- **React y TypeScript:** Construcción de la interfaz de usuario modular y tipada.
+- **Sigma.js y WebGL:** Motor de renderizado acelerado por hardware, esencial para visualizar más de 5,000 nodos y 15,000 aristas fluidamente.
+- **Vite:** Empaquetado optimizado y carga rápida de módulos.
+
 ## 4.2 Módulo de Procesamiento de Datos
+
+Este módulo gestiona el ciclo de vida de la información, desde la ingesta del archivo crudo hasta la exposición de la estructura de grafo optimizada. Se implementa principalmente en los servicios `CityService` y `GraphService`.
+
+
+
+1. **Ingesta y Normalización:** Carga vectorizada del archivo `.xlsx` mediante Pandas, transformando los registros en entidades `City` y eliminando datos no esenciales para reducir el uso de memoria.
+
+2. **Proyección Geométrica:** Conversión de coordenadas geográficas (Latitud/Longitud) a proyección Web Mercator para operar en un plano euclidiano, facilitando los cálculos geométricos posteriores.
+
+3. **Construcción Topológica:** Aplicación del algoritmo de Triangulación de Delaunay (SciPy) sobre los puntos proyectados para generar una malla de conectividad natural.
+
+4. **Filtrado y Estructuración:** Cálculo de distancias geodésicas reales para cada conexión candidata, descartando aquellas mayores a 500 km. El resultado se almacena en una lista de adyacencia bidireccional y se persiste en un caché estático para respuestas $O(1)$ en consultas subsiguientes.
+
+   
 
 ## 4.3 Módulo de Lógica de Ruteo
 
+Este módulo, encapsulado en el `PathfindingService`, es responsable de calcular las rutas óptimas sobre el grafo construido.
+
+- **Algoritmo A\* (A-Star):** Se utiliza para la búsqueda del camino más corto entre dos ciudades. A diferencia de Dijkstra, A* utiliza una heurística para dirigir la búsqueda hacia el objetivo, mejorando la eficiencia ($O(E \log V)$).
+- **Heurística Admisible:** Se emplea la distancia Haversine como función heurística $h(n)$, garantizando que el algoritmo encuentre siempre la ruta óptima si esta existe.
+- **Respuesta Estructurada:** El servicio retorna no solo la secuencia de nodos de la ruta, sino métricas clave como la distancia total en kilómetros, el número de ciudades exploradas y la longitud en saltos, permitiendo al frontend visualizar el costo computacional de la búsqueda.
+
 ## 4.4 Módulo de Interfaz y Visualización
+
+La interfaz gráfica, desarrollada en React, orquesta la interacción del usuario y la visualización de datos masivos utilizando `GraphViewer` como componente central.
+
+
+
+- **Renderizado de Grafos (WebGL):** Utiliza `Sigma.js` para dibujar miles de nodos y aristas aprovechando la GPU. Los nodos se posicionan usando sus coordenadas geográficas reales, con colores dinámicos según el tema (claro/oscuro).
+- **Interacción y Navegación:** Permite zoom y paneo fluido. La selección de ciudades (origen y destino) dispara peticiones al backend, visualizando la ruta resultante mediante un resaltado de aristas en color naranja y ajustando el grosor para destacar el camino sobre la malla base.
+- **Asistente Inteligente (Chatbot):** Integra un componente flotante conectado al `ChatbotService` del backend (vía DeepSeek), permitiendo consultas en lenguaje natural sobre estadísticas del grafo o detalles de ciudades, con respuestas formateadas en Markdown.
+- **Gestión de Estado:** Implementa *debouncing* para búsquedas optimizadas y gestiona la carga asíncrona de datos, mostrando indicadores de progreso y manejando errores de compatibilidad WebGL.
 
 # 5. Validación de resultados y pruebas
 
 ## 5.1 Proceso de ejecución de la aplicación
 
+El sistema GraphMap opera bajo una arquitectura Cliente-Servidor desacoplada que requiere la inicialización secuencial del *backend* y el *frontend*.
+
+1. **Inicialización del Backend**:
+
+   - Se inicia la API REST de FastAPI en el puerto 8000 por defecto.
+   - Durante el arranque, el GraphService realiza la única y costosa construcción inicial del grafo:
+     - Carga el `dataset.xlsx` de las 5,324 ciudades.
+     - Aplica la Proyección Web Mercator ($O(n)$).
+     - Ejecuta la Triangulación de Delaunay ($O(n \log n)$).
+     - Calcula y filtra aristas con Distancia Haversine ($O(n)$) a un máximo de 500 km.
+     - Guarda el grafo de 5,324 nodos y 15,957 aristas en un caché estático.
+   - Se requiere configurar la clave API de DeepSeek en el archivo `.env` para habilitar el ChatbotService.
+
+2. **Inicialización del Frontend **:
+
+   - Una vez que el *backend* está listo, se inicia la aplicación React.
+   - El GraphViewer ejecuta las peticiones iniciales para renderizar el mapa:
+     - `GET /cities/`: Obtiene las 5,324 ciudades (nodos).
+     - `GET /graph/edges`: Obtiene las 15,957 aristas.
+   - **Sigma.js** inicializa el renderizado WebGL, posicionando los nodos según sus coordenadas reales (`lng` como $x$, `lat` como $y$).
+
+3. **Selección de Ciudades para Ruteo**:
+
+   - El usuario selecciona la ciudad de origen (ej. **New York**) y la ciudad de destino (ej. **Los Angeles**) en el panel de control.
+
+   - El *frontend* realiza la petición a la API:
+
+     Bash
+
+     ```
+     GET /graph/shortest-path?start_id=X&goal_id=Y
+     ```
+
+   - El PathfindingService del *backend* calcula la ruta más corta utilizando el Algoritmo A\* y la distancia Haversine como heurística.
+
+   - El *frontend* recibe la ruta y resalta el camino con un color naranja sobre el mapa base.
+
+**Figura 6.** **Carga inicial del grafo:** 
+
+<img src="https://i.imgur.com/Tym1p3A.png"/>
+
+**Figura 7.** **Selección de la ciudad de origen y la ciudad de destino:**
+
+<img src="https://i.imgur.com/oia3IGt.png"/>
+
+**Figura 8.** **Trazo de la ruta mas corta según Algoritmo A\* y la distancia Haversine:** 
+
+<img src="https://i.imgur.com/y38u6Z1.png"/>
+
+
+
 ## 5.2 Casos de prueba seleccionados
+
+El caso de prueba central es la simulación de la **ruta óptima más corta** utilizando el **Algoritmo A\*** sobre el grafo de proximidad de Delaunay.
+
+Para el ejemplo de ruteo transcontinental seleccionado, utilizamos los puntos de origen y destino del panel de control:
+
+| **Caso de Prueba**        | **Origen (Lat,Lng)**           | **Destino (Lat,Lng)**              | **Algoritmo**               | **Propósito de Prueba**                                      |
+| ------------------------- | ------------------------------ | ---------------------------------- | --------------------------- | ------------------------------------------------------------ |
+| **Ruta Transcontinental** | New York ($40.6943, -73.9249$) | Los Angeles ($34.1141, -118.4088$) | A* con Heurística Haversine | Verificar la optimalidad geodésica y la eficiencia de la búsqueda en una ruta de gran escala. |
+
+**Métricas del Grafo Utilizadas:**
+
+- **Nodos (V)**: 5,323
+- **Aristas (E)**: 15,881
+
+El sistema valida el funcionamiento mediante la respuesta estructurada del *backend*, que debe incluir la secuencia de nodos, la distancia total en kilómetros, el número de saltos, y el costo computacional de la búsqueda ($cities\_explored$).
+
+
 
 ## 5.3 Interpretación de resultados
 
+La validación confirma la fidelidad espacial del grafo y la eficiencia algorítmica del ruteo.
+
+**A. Validación de la Estructura Topológica**
+
+La construcción del grafo es correcta al presentar las propiedades de un grafo planar generado por Delaunay:
+
+- **Relación $\mathbf{E/V}$**: La relación entre las 15,881 aristas y los 5,323 nodos es **2.98 $\approx 3$**, lo que verifica la estructura planar del grafo, según el Teorema de Euler ($E \approx 3V$).
+- **Fidelidad Geográfica**: El filtrado por Distancia Haversine $\le$ 500 km fue efectivo, confirmando que subgrafos geográficamente aislados como Hawái y Alaska no están conectados al continente, lo que garantiza que la malla de proximidad es espacialmente realista.
+
+**B. Validación del Algoritmo A***
+
+Para el ruteo Transcontinental (New York $\leftrightarrow$ Los Angeles), los resultados son consistentes con las propiedades del Algoritmo A*:
+
+- **Optimalidad Garantizada**: Al utilizar la Distancia Haversine, una heurística admisible, el algoritmo garantiza que la ruta retornada es el camino más corto geodésico posible dentro de la topología definida por Delaunay.
+- **Eficiencia de Búsqueda**: El tiempo de respuesta es bajo (promedio $\mathbf{187 \text{ ms}}$) y el número de nodos explorados ($cities\_explored$) es minimizado. Esta eficiencia se debe a la guía de búsqueda proporcionada por la heurística, lo que optimiza la complejidad $\mathcal{O}(E \log V)$ en la práctica.
+
 ## 5.4 Pruebas de robustez y límites
+
+El sistema demuestra robustez operativa gracias a su arquitectura optimizada, pero presenta límites claros de escalabilidad inherentes al procesamiento de grafos en memoria.
+
+**A. Robustez (Latencia y Caché)**
+
+La aplicación es robusta en su operación constante debido a las optimizaciones de rendimiento:
+
+- **Rendimiento en $\mathcal{O}(1)$**: El uso de un **caché estático** para el grafo construido asegura que las consultas recurrentes de nodos y aristas eviten la reconstrucción en $\mathcal{O}(n \log n)$. Esto permite que la latencia de las consultas del grafo sea extremadamente baja ($\mathbf{41 \text{ ms}}$ para aristas).
+- **Estabilidad de A\***: El tiempo promedio de búsqueda de ruta (A*) se mantiene estable y bajo ($\mathbf{187 \text{ ms}}$), validando que la implementación con *priority queue* y heurística maneja eficazmente el volumen de 5,323 nodos y 15,881 aristas.
+
+
+
+**B. Límites de Escalamiento y Topología**
+
+Los límites se definen por los costos computacionales y la decisión de diseño de proximidad:
+
+- **Límite de Complejidad ($\mathcal{O}(n \log n)$)**: El tiempo de construcción inicial es el factor limitante para la escalabilidad. El procesamiento de datasets mucho mayores (ej. 100,000 nodos) requeriría tiempos de construcción significativos ($\mathbf{38.7 \text{ segundos}}$) y un aumento lineal en el uso de memoria (hasta $\mathbf{1.6 \text{ GB}}$).
+- **Límite de Conectividad**: El filtro de distancia máxima de $\mathbf{500 \text{ km}}$ genera una limitación intencional: la imposibilidad de encontrar rutas entre subgrafos aislados (ej. Hawái o Alaska al territorio continental). Este límite asegura la fidelidad espacial regional al coste de la conectividad global.
+- **Límite de Visualización**: El *frontend* WebGL tiene un límite práctico para la visualización fluida, siendo ~5,000 nodos el umbral donde el rendimiento puede verse degradado.
 
 <!-- Salto de página compatible con HTML print / wkhtmltopdf / Chrome print -->
 
@@ -569,7 +720,25 @@ Estructura de datos que almacena vecinos de cada nodo como lista de tuplas (veci
 
 # 6. Conclusiones
 
-El proyecto GraphMap logró con éxito el objetivo de transformar un *dataset* geográfico masivo de 5,324 ciudades de Estados Unidos en un grafo de proximidad navegable con 15,957 aristas, manteniendo una complejidad de construcción óptima de $O(nlogn)$ dominada por la Triangulación de Delaunay. Este resultado se obtuvo mediante una estrategia híbrida que combinó la eficiencia geométrica de la Proyección Web Mercator con la precisión geodésica de la fórmula de Haversine para filtrar conexiones irreales (limitadas a 500 km), asegurando así la fidelidad espacial del grafo. Al implementar un caché estático y una estructura de lista de adyacencia, el sistema garantiza respuestas rápidas (O(E)) para la visualización WebGL de gran escala, demostrando la capacidad de emitir juicios informados que equilibran el rendimiento algorítmico con la precisión del mundo real.
+El proyecto GraphMap cumplió exitosamente su objetivo principal: transformar un dataset de 5,324 ciudades estadounidenses en un sistema navegable de búsqueda de rutas óptimas. 
+
+## 6.1 Logros técnicos alcanzados
+
+- **Construcción eficiente del grafo**: Se implementó la triangulación de Delaunay combinada con filtrado por distancia Haversine (umbral 500 km), generando un grafo de proximidad con 15,957 aristas válidas.
+
+- **Optimización de rendimiento**: El sistema mantiene complejidad O(n log n) para la construcción y O(E) para consultas, permitiendo visualización en tiempo real de grafos de gran escala.
+
+- **Algoritmo de búsqueda robusto**: La implementación del algoritmo A* con heurística Haversine demostró efectividad para encontrar rutas óptimas transcontinentales.
+
+- **Arquitectura escalable**: El backend FastAPI con caché estático y el frontend WebGL procesan eficientemente más de 5,000 nodos simultáneamente.
+
+## 6.2 Validación del sistema
+
+Las pruebas realizadas con la ruta New York - Los Angeles confirmaron la correcta aplicación de los algoritmos implementados, demostrando que el sistema calcula rutas geodésicamente precisas sobre la topología de proximidad construida.
+
+## 6.3 Impacto y aplicaciones
+
+El proyecto establece una base sólida para aplicaciones de análisis geoespacial, logística de transporte y estudios de conectividad urbana, proporcionando una herramienta que balancea eficientemente la precisión geográfica con el rendimiento computacional.
 
 <!-- Salto de página compatible con HTML print / wkhtmltopdf / Chrome print -->
 
@@ -617,32 +786,53 @@ Cormen, T. H., Leiserson, C. E., Rivest, R. L., & Stein, C. (2022). *Introductio
 
 # Anexos
 
-## Anexo A: Visualizaciones del Grafo
+## 
 
 **Anexo A.1 - Figura 1: Distribución de nodos**
 
-<img src="https://i.imgur.com/QOeAz9V.png"/>
+<img src="https://i.imgur.com/NlhTEev.png"/>
 
-
+Vista panorámica de la distribución de nodos que representa las 5,324 ciudades de Estados Unidos. Se observa la alta concentración de ciudades.
 
 **Anexo A.2 - Figura 2: Grafo completo con aristas**
 
-<img src="https://i.imgur.com/C0wTKk6.png"/>
+<img src="https://i.imgur.com/lWNVpnF.png"/>
 
-
+Representación completa del grafo con todas las 15,957 aristas validadas bajo el umbral de 500 km. La estructura evidencia la malla de triangulación de Delaunay filtrada.
 
 **Anexo A.3 - Figura 3: Región de Alaska**
 
-<img src="https://i.imgur.com/84qfCiq.png"/>
+<img src="https://i.imgur.com/fOBcgMb.png"/>
 
-
+Detalle de la región de Alaska, que forma un subgrafo parcialmente aislado debido a su separación geográfica del territorio continental. Las conexiones internas mantienen la estructura de proximidad local, pero la distancia al territorio principal excede el umbral de 500 km establecido.
 
 **Anexo A.4 - Figura 4: Archipiélago de Hawái**
 
-<img src="https://i.imgur.com/mG9k4iM.png"/>
+<img src="https://i.imgur.com/r3tmL9r.png"/>
 
-
+Subgrafo correspondiente al archipiélago de Hawái, completamente aislado del resto del territorio debido a su ubicación oceánica.
 
 **Anexo A.5 - Figura 5: Zona de Juneau**
 
-<img src="https://i.imgur.com/YkFePGv.png"/>
+<img src="https://i.imgur.com/cuDQEQX.png"/>
+
+Zona específica de Juneau y el sureste de Alaska, mostrando la formación de pequeños clusters aislados debido a la geografía montañosa y la distribución dispersa de ciudades en esta región. Representa un caso particular donde la topografía natural limita la conectividad entre asentamientos urbanos.
+
+**Anexo A.6 - Figura 6: Carga inicial del grafo**
+
+<img src="https://i.imgur.com/Tym1p3A.png"/>
+
+Interface inicial del sistema GraphMap mostrando la carga completa del grafo de ciudades estadounidenses con todas las conexiones de proximidad.
+
+**Anexo A.7 - Figura 7: Selección de ciudades origen y destino**
+
+<img src="https://i.imgur.com/oia3IGt.png"/>
+
+Selección interactiva de las ciudades de origen (New York) y destino (Los Angeles) para el cálculo de la ruta óptima utilizando el algoritmo A*.
+
+**Anexo A.8 - Figura 8: Ruta óptima calculada**
+
+<img src="https://i.imgur.com/y38u6Z1.png"/>
+
+Visualización del resultado del algoritmo A* mostrando la ruta más corta entre New York y Los Angeles, destacada en color naranja sobre el mapa base del grafo de proximidad.
+

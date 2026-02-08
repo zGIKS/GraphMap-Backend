@@ -1,8 +1,6 @@
 """
 Servicio para construir grafos usando diferentes algoritmos de triangulación
 """
-import numpy as np
-from scipy.spatial import Delaunay
 from typing import List, Tuple
 from graphmap.domain.model.entities.graph import CityGraph
 from graphmap.domain.model.entities.geo_utils import GeoUtils
@@ -27,6 +25,10 @@ class GraphBuilder:
         if len(cities_data) < 3:
             # Delaunay requiere al menos 3 puntos
             return graph
+
+        # Lazy imports para reducir el tiempo de import de la app en serverless.
+        import numpy as np
+        from scipy.spatial import Delaunay
 
         # Guardar coordenadas originales (lat, lon) para cálculo de distancias
         original_coords = np.array([(lat, lon) for _, lat, lon in cities_data])

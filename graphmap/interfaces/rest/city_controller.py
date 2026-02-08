@@ -20,8 +20,7 @@ city_service = CityService()
 @router.get("/")
 async def get_all_cities():
     """
-    Endpoint optimizado automáticamente para el mapa
-    Retorna solo los campos esenciales: id, city, lat, lng
+    Endpoint que retorna todas las ciudades
     """
     cities = city_service.load_cities_from_excel()
     
@@ -54,7 +53,7 @@ async def get_cities_count():
 @router.get("/{query}", response_model=List[City])
 async def get_cities_name(query: str):
     """
-    Búsqueda de ciudades por nombre - retorna TODOS los resultados
+    Endpoint que busca ciudades por nombre
     """
     results = city_service.search_cities(query)
     return results  # Sin límite - devuelve todos los resultados encontrados
