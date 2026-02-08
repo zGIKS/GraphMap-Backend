@@ -19,25 +19,25 @@ El sistema filtra conexiones irreales (como aristas interoceánicas) y garantiza
 
 El backend utiliza una arquitectura cliente-servidor desacoplada con API REST, procesando un dataset de 5,324 ciudades estadounidenses para construir un grafo de proximidad mediante:
 
-1. **Proyección Web Mercator**: Convierte coordenadas esféricas (lat/lon) a un plano euclidiano  
-   $$
-   x = \frac{\text{lon} \times R}{180°}, \quad y = \frac{\ln\left(\tan\left(\frac{90° + \text{lat}}{2} \times \frac{\pi}{180°}\right)\right)}{(\pi/180°)} \times \frac{R}{180°}
-   $$
+1. **Proyección Web Mercator**: Convierte coordenadas esféricas (lat/lon) a un plano euclidiano
+   ```math
+   x = \frac{\text{lon} \times R}{180^\circ}, \quad y = \frac{\ln\left(\tan\left(\frac{90^\circ + \text{lat}}{2} \times \frac{\pi}{180^\circ}\right)\right)}{(\pi/180^\circ)} \times \frac{R}{180^\circ}
+   ```
 
-2. **Triangulación de Delaunay**: Genera una malla planar óptima de conexiones cercanas  
-   $$
+2. **Triangulación de Delaunay**: Genera una malla planar óptima de conexiones cercanas
+   ```math
    T_{\text{Delaunay}}(n) \in \mathcal{O}(n \log n)
-   $$
+   ```
 
-3. **Filtrado por Distancia Haversine**: Calcula distancias geodésicas reales y filtra conexiones > 500 km  
-   $$
+3. **Filtrado por Distancia Haversine**: Calcula distancias geodésicas reales y filtra conexiones > 500 km
+   ```math
    d = 2R \cdot \arcsin\left(\sqrt{\sin^2\left(\frac{\Delta\text{lat}}{2}\right) + \cos(\text{lat}_1) \cdot \cos(\text{lat}_2) \cdot \sin^2\left(\frac{\Delta\text{lon}}{2}\right)}\right)
-   $$
+   ```
 
-4. **Búsqueda de Rutas con A***: Encuentra caminos óptimos usando heurística admisible  
-   $$
+4. **Búsqueda de Rutas con A***: Encuentra caminos óptimos usando heurística admisible
+   ```math
    T_{\text{A*}} \in \mathcal{O}(E \log V)
-   $$
+   ```
 
 ### Arquitectura Técnica
 
