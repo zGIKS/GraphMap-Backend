@@ -2,10 +2,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import RedirectResponse
-from graphmap.interfaces.rest.city_controller import router as city_router
-from graphmap.interfaces.rest.graph_controller import router as graph_router
-from graphmap.interfaces.rest.chatbot_controller import router as chatbot_router
+import importlib
+import logging
 from config import settings
+
+logger = logging.getLogger(__name__)
 
 # Crear aplicación FastAPI con configuración centralizada
 app = FastAPI(
@@ -26,10 +27,19 @@ app.add_middleware(
 #  Compresión automática (reduce 70-80% el tamaño)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
-# Incluir los routers de los controladores
-app.include_router(city_router)
-app.include_router(graph_router)
-app.include_router(chatbot_router)
+def _include_router(module_path: str, attr: str = "router") -> None:
+    try:
+        module = importlib.import_module(module_path)
+        router = getattr(module, attr)
+        app.include_router(router)
+    except Exception:
+        logger.exception("Failed to include router: %s", module_path)
+
+
+# Incluir routers de forma resiliente para evitar caídas globales en serverless
+_include_router("graphmap.interfaces.rest.city_controller")
+_include_router("graphmap.interfaces.rest.graph_controller")
+_include_router("graphmap.interfaces.rest.chatbot_controller")
 
 @app.get("/")
 async def root():
@@ -50,4 +60,3 @@ async def graphmap_info():
         "docs": "/docs",
         "redoc": "/redoc"
     }
-
